@@ -83,42 +83,50 @@ class T2D2(App):
             pass
         
     def preprocess_input(self, frame):
-        # # Preprocess the input frame for the model
-        # # Resize the frame to match the input size of the model
-        # input_size = tuple(self.input_details[0]['shape'][1:3])
-        # input_data = cv2.resize(frame, input_size)
+        # Preprocess the input frame for the model
+        # Resize the frame to match the input size of the model
+        input_size = tuple(self.input_details[0]['shape'][1:3])
+        input_data = cv2.resize(frame, input_size)
 
-        # # Convert the input data type to FLOAT32
-        # input_data = input_data.astype(np.float32)
+        # Convert the input data type to FLOAT32
+        input_data = input_data.astype(np.float32)
 
-        # # Normalize the input data if required (adapt this based on your model)
-        # input_data /= 255.0
 
-        # # Add a batch dimension to the input data
-        # input_data = np.expand_dims(input_data, axis=0)
-
-        # return input_data
-        
-        # Preprocess the input frame for the TFLite model
-        input_shape = self.input_details[0]['shape']
-        input_data = cv2.resize(frame, (input_shape[1], input_shape[2]))
+        # Add a batch dimension to the input data
         input_data = np.expand_dims(input_data, axis=0)
-        input_data = input_data.astype(np.float32) / 255.0
+
+        # Normalize the input data if required (adapt this based on your model)
+        input_data /= 255.0
+        
         return input_data
+        
+        # # Preprocess the input frame for the TFLite model
+        # input_shape = self.input_details[0]['shape']
+        # input_data = cv2.resize(frame, (input_shape[1], input_shape[2]))
+        # input_data = np.expand_dims(input_data, axis=0)
+        # input_data = input_data.astype(np.float32) / 255.0
+        # return input_data
     
     def postprocess_output(self, frame, output_data):
         # Postprocess the output of the model
                 
         for detection in output_data[0]:
+            # detection = detection.reshape(1, -1)
             print("Detection dimensions:", detection.shape)
             print("Detection values:", detection)
             
+            # Reshape the detection array to a 2D array with shape (num_boxes, num_values_per_box)
+            detection = detection.reshape(-1, detection.shape[-1])
+            print("Detection dimensions:", detection.shape)
+            
             try:     
                 print(detection)
-                class_probs = detection[5:]
-                class_id = np.argmax(class_probs)
+                class_id = np.argmax(detection)
+                score = detection[0, class_id]
+                # class_probs = detection[5:]
+                # class_id = np.argmax(class_probs)
+                # score = class_probs[class_id]
                 print(class_id)
-                score = class_probs[class_id]
                 label = f"Class: {class_id}, Score: {score:.2f}"
                 print("label: ", label)
             except Exception as e:
